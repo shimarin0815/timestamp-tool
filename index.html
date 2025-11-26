@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Timestamp Formatter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* スクロールバーのデザイン */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex flex-col">
+
+    <header class="bg-white border-b border-slate-200 shadow-sm py-4 px-6 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <svg class="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+            <h1 class="text-xl font-bold tracking-tight text-slate-800">Timestamp Formatter</h1>
+        </div>
+        <div class="text-sm text-slate-500 hidden sm:block">YouTube用タイムスタンプ整形ツール</div>
+    </header>
+
+    <main class="flex-1 overflow-hidden p-4 md:p-6 container mx-auto max-w-6xl">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+            
+            <div class="flex flex-col gap-4 h-full overflow-y-auto pr-2">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="font-bold text-slate-700 mb-3 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        設定・補正
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <label class="block text-slate-500 mb-1">区切り文字</label>
+                            <select id="separator" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-slate-50">
+                                <option value="space">半角スペース (00:00 本題)</option>
+                                <option value="hyphen">ハイフン (00:00 - 本題)</option>
+                                <option value="pipe">縦線 (00:00 | 本題)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-slate-500 mb-1">時間ズレ補正 (秒)</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="offset" value="0" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="例: 10 または -5">
+                                <span class="text-xs text-slate-400 whitespace-nowrap">±秒</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex flex-wrap gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" id="autoStart" checked class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                            <span class="text-sm text-slate-700">00:00を自動挿入</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" id="showDuration" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                            <span class="text-sm text-slate-700">尺(長さ)を表示</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" id="makeLinks" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                            <span class="text-sm text-slate-700">リンク形式にする</span>
+                        </label>
+                    </div>
+                    
+                    <div id="videoIdArea" class="mt-3 hidden">
+                        <label class="block text-xs text-slate-500 mb-1">YouTube動画ID (例: dQw4w9WgXcQ)</label>
+                        <input type="text" id="videoId" class="w-full p-2 text-sm border border-slate-300 rounded-lg bg-slate-50" placeholder="URLの ?v= の後ろの部分">
+                    </div>
+                </div>
+
+                <div class="flex-1 bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col min-h-[300px]">
+                    <h2 class="font-bold text-slate-700 mb-2 flex justify-between items-center">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            入力
+                        </span>
+                        <span class="text-xs font-normal text-slate-400 bg-slate-100 px-2 py-1 rounded">表記ゆれOK・汚いメモでOK</span>
+                    </h2>
+                    <textarea id="input" class="flex-1 w-full p-3 bg-slate-50 border border-slate-300 rounded-lg resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-700 font-mono text-sm leading-relaxed" placeholder="ここに貼り付け（例）&#13;&#10;1:30 本題&#13;&#10;5分45秒 まとめ&#13;&#10;10.15 おまけ"></textarea>
+                </div>
+            </div>
+
+            <div class="bg-indigo-50 p-5 rounded-xl shadow-inner border border-indigo-100 flex flex-col h-full overflow-hidden">
+                <h2 class="font-bold text-indigo-900 mb-3 flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        プレビュー結果
+                    </span>
+                    <span id="lineCount" class="text-xs text-indigo-500 font-normal">0 行</span>
+                </h2>
+                
+                <div class="relative flex-1 bg-white rounded-lg border border-indigo-200 overflow-hidden">
+                    <textarea id="output" readonly class="w-full h-full p-4 bg-white resize-none outline-none text-slate-800 font-mono text-sm leading-relaxed" placeholder="整形されたテキストがここに表示されます..."></textarea>
+                    
+                    <button id="copyBtn" class="absolute bottom-4 right-4 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 transition-all transform active:scale-95 font-medium text-sm z-10">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                        コピーする
+                    </button>
+                </div>
+
+                <div class="mt-3 text-xs text-indigo-400 text-center">
+                    YouTubeの概要欄にそのまま貼り付けられます
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 要素を取得（料理の材料を揃えるようなもの）
+        const inputEl = document.getElementById('input');
+        const outputEl = document.getElementById('output');
+        const separatorEl = document.getElementById('separator');
+        const offsetEl = document.getElementById('offset');
+        const autoStartEl = document.getElementById('autoStart');
+        const showDurationEl = document.getElementById('showDuration');
+        const makeLinksEl = document.getElementById('makeLinks');
+        const videoIdAreaEl = document.getElementById('videoIdArea');
+        const videoIdEl = document.getElementById('videoId');
+        const copyBtn = document.getElementById('copyBtn');
+        const lineCountEl = document.getElementById('lineCount');
+
+        // イベントリスナー（変更があったら即座に計算する設定）
+        const elements = [inputEl, separatorEl, offsetEl, autoStartEl, showDurationEl, makeLinksEl, videoIdEl];
+        elements.forEach(el => el.addEventListener('input', processText));
+
+        // リンク作成チェックボックスの切り替え表示
+        makeLinksEl.addEventListener('change', () => {
+            videoIdAreaEl.style.display = makeLinksEl.checked ? 'block' : 'none';
+        });
+
+        // テキスト処理のメインロジック（ここが頭脳！）
+        function processText() {
+            const rawText = inputEl.value;
+            const separatorType = separatorEl.value;
+            const offset = parseInt(offsetEl.value) || 0;
+            const autoStart = autoStartEl.checked;
+            const showDuration = showDurationEl.checked;
+            const makeLinks = makeLinksEl.checked;
+            const videoId = videoIdEl.value.trim();
+
+            // 区切り文字の定義
+            let sepChar = ' ';
+            if (separatorType === 'hyphen') sepChar = ' - ';
+            if (separatorType === 'pipe') sepChar = ' | ';
+
+            // 行ごとに分割して処理
+            let lines = rawText.split('\n');
+            let processedLines = [];
+            let timeData = []; // 時間計算用
+
+            // 1. まず各行から時間とテキストを抽出する
+            lines.forEach(line => {
+                if (!line.trim()) return; // 空行は無視
+
+                // 表記ゆれ吸収（全角→半角、漢字削除など）
+                let normLine = line
+                    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)) // 全角数字→半角
+                    .replace(/[：．。]/g, ':') // 区切り文字統一
+                    .replace(/分/g, ':').replace(/秒/g, '') // "5分30秒" -> "5:30"
+                    .trim();
+
+                // 時間パターンを探す (HH:MM:SS または MM:SS)
+                const timeMatch = normLine.match(/(\d{1,2}:\d{1,2}:\d{1,2})|(\d{1,2}:\d{1,2})/);
+
+                if (timeMatch) {
+                    let timeStr = timeMatch[0];
+                    // タイトル部分（時間以外）を抽出
+                    let title = line.replace(timeMatch[0], '').replace(/[：:．.\-｜|]/g, ' ').trim(); // 元の行から時間を消してゴミも消す
+                    // もしタイトルが全角数字を変換する過程で影響受けてたら困るので、元のlineからうまく取るのが理想だが、簡易化のためこれで。
+                    
+                    // 秒数に変換して計算
+                    let totalSeconds = timeToSeconds(timeStr);
+                    totalSeconds += offset; // ズレ補正
+
+                    if (totalSeconds < 0) totalSeconds = 0; // マイナス時間は0にする
+
+                    timeData.push({ seconds: totalSeconds, title: title });
+                }
+            });
+
+            // ソート（時間が前後してても整列させる）
+            timeData.sort((a, b) => a.seconds - b.seconds);
+
+            // 00:00 自動挿入
+            if (autoStart && timeData.length > 0) {
+                if (timeData[0].seconds !== 0) {
+                    timeData.unshift({ seconds: 0, title: 'Start' });
+                }
+            }
+
+            // 出力用テキストの生成
+            timeData.forEach((item, index) => {
+                let formattedTime = secondsToTime(item.seconds);
+                let lineStr = "";
+
+                // リンク生成モードか通常モードか
+                if (makeLinks && videoId) {
+                    // https://youtu.be/ID?t=123 形式
+                    lineStr = `https://youtu.be/${videoId}?t=${item.seconds} ${item.title}`;
+                } else {
+                    lineStr = `${formattedTime}${sepChar}${item.title}`;
+                }
+
+                // 尺（長さ）の計算
+                if (showDuration && index < timeData.length - 1) {
+                    let durationSec = timeData[index + 1].seconds - item.seconds;
+                    let durationStr = secondsToDuration(durationSec);
+                    lineStr += ` (${durationStr})`;
+                }
+
+                processedLines.push(lineStr);
+            });
+
+            outputEl.value = processedLines.join('\n');
+            lineCountEl.textContent = `${processedLines.length} 行`;
+        }
+
+        // 時間文字列(MM:SS or H:MM:SS)を秒数に変換
+        function timeToSeconds(timeStr) {
+            const parts = timeStr.split(':').map(Number);
+            let seconds = 0;
+            if (parts.length === 3) {
+                seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            } else {
+                seconds = parts[0] * 60 + parts[1];
+            }
+            return seconds;
+        }
+
+        // 秒数を時間文字列に変換 (05:30 or 01:05:30)
+        function secondsToTime(totalSeconds) {
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+
+            const mm = String(m).padStart(2, '0');
+            const ss = String(s).padStart(2, '0');
+
+            if (h > 0) {
+                const hh = String(h).padStart(2, '0');
+                return `${hh}:${mm}:${ss}`;
+            } else {
+                return `${mm}:${ss}`; // 1時間未満ならMM:SS
+            }
+        }
+
+        // 尺表示用（0が並ぶとかっこ悪いので短縮形）
+        function secondsToDuration(totalSeconds) {
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+            
+            let result = "";
+            if (h > 0) result += `${h}時間`;
+            if (m > 0) result += `${m}分`;
+            if (s > 0 || result === "") result += `${s}秒`; // 分が0でも秒があれば表示
+            return result;
+        }
+
+        // コピー機能
+        copyBtn.addEventListener('click', () => {
+            outputEl.select();
+            document.execCommand('copy');
+            
+            // ボタンの見た目を一時的に変える
+            const originalHTML = copyBtn.innerHTML;
+            copyBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> コピーしました！`;
+            copyBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            copyBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+            
+            setTimeout(() => {
+                copyBtn.innerHTML = originalHTML;
+                copyBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                copyBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            }, 2000);
+        });
+
+        // 初回実行（プレースホルダー的に何か表示しておきたい場合）
+        // processText(); 
+    </script>
+</body>
+</html>
